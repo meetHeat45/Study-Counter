@@ -9,64 +9,72 @@
 body {
     margin: 0;
     font-family: 'Segoe UI', sans-serif;
-    background: linear-gradient(135deg, #020617, #0f172a);
-    color: white;
     height: 100vh;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    color: white;
+    overflow: hidden;
+    background: radial-gradient(circle at top, #0f172a, #020617 70%);
 }
 
-/* Container */
 .container {
     text-align: center;
-    max-width: 500px;
+    padding: 20px;
 }
 
-/* Subscribe */
-.subscribe {
-    position: absolute;
-    top: 20px;
-    right: 20px;
-    background: #ef4444;
-    padding: 8px 14px;
-    border-radius: 8px;
-}
+h1 { font-size: 2.2rem; }
 
-/* Heading */
-h1 { font-size: 2rem; }
-
-.channel {
-    color: #94a3b8;
-    font-size: 0.9rem;
-    margin-bottom: 15px;
-}
+.channel { color: #94a3b8; margin-bottom: 10px; }
 
 .hook { color: #f87171; margin-bottom: 10px; }
 
 .category { color: #22c55e; margin-bottom: 10px; }
 
 .puzzle {
-    font-size: 1.8rem;
+    font-size: 2rem;
     line-height: 1.6;
 }
 
-/* Timer */
-.timer { margin-top: 10px; }
+/* TIMER */
+.timer {
+    margin-top: 15px;
+    font-size: 1.3rem;
+    animation: pulse 1.5s infinite;
+}
 
 .bar {
     width: 260px;
-    height: 8px;
+    height: 6px;
     background: #1f2937;
     border-radius: 10px;
-    overflow: hidden;
     margin: auto;
+    overflow: hidden;
 }
 
 .progress {
     height: 100%;
     width: 100%;
     background: #22c55e;
+    transition: width 1s linear;
+}
+
+/* Pulse animation */
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+/* Danger shake */
+.danger {
+    color: red !important;
+    animation: shake 0.3s infinite;
+}
+
+@keyframes shake {
+    0% { transform: translateX(0); }
+    25% { transform: translateX(-2px); }
+    50% { transform: translateX(2px); }
+    75% { transform: translateX(-2px); }
+    100% { transform: translateX(0); }
 }
 
 /* Score */
@@ -75,46 +83,52 @@ h1 { font-size: 2rem; }
     color: #facc15;
 }
 
-/* Live comments */
-.live-comments {
+/* CHAT */
+.chat {
     position: absolute;
     bottom: 20px;
     left: 10px;
-    width: 70%;
+    width: 75%;
+    font-size: 0.85rem;
 }
 
-.comment {
-    background: rgba(255,255,255,0.08);
-    padding: 6px 10px;
-    border-radius: 12px;
+.msg {
     margin-top: 6px;
-    font-size: 0.8rem;
-    animation: floatUp 5s linear forwards;
-    backdrop-filter: blur(5px);
+    animation: fadeUp 5s linear forwards;
 }
 
-.username {
-    font-weight: bold;
+.name {
     color: #38bdf8;
+    font-weight: bold;
     margin-right: 5px;
 }
 
-.likes {
-    color: #f87171;
-    font-size: 0.7rem;
-    margin-left: 6px;
+@keyframes fadeUp {
+    0% { opacity: 1; transform: translateY(0); }
+    100% { opacity: 0; transform: translateY(-60px); }
+}
+
+/* REACTIONS */
+.reactions {
+    position: absolute;
+    bottom: 20px;
+    left: 5px;
+}
+
+.react {
+    position: absolute;
+    font-size: 1.2rem;
+    animation: floatUp 3s linear forwards;
 }
 
 @keyframes floatUp {
-    0% { transform: translateY(0); opacity: 1; }
-    100% { transform: translateY(-80px); opacity: 0; }
+    0% { opacity: 1; transform: translateY(0); }
+    100% { opacity: 0; transform: translateY(-100px); }
 }
 </style>
 </head>
 
 <body>
-
-<div class="subscribe">Subscribe</div>
 
 <div class="container">
     <h1>Daily Math Puzzle</h1>
@@ -124,7 +138,7 @@ h1 { font-size: 2rem; }
     <div class="category" id="category"></div>
     <div class="puzzle" id="puzzle"></div>
 
-    <div class="timer">
+    <div class="timer" id="timerText">
         ⏳ <span id="time">60</span>s
         <div class="bar"><div class="progress" id="progress"></div></div>
     </div>
@@ -132,121 +146,115 @@ h1 { font-size: 2rem; }
     <div class="score">Score: <span id="score">0</span></div>
 </div>
 
-<div class="live-comments" id="liveComments"></div>
+<div class="chat" id="chat"></div>
+<div class="reactions" id="reactions"></div>
 
 <script>
 const puzzles = [
-{
-type:"AGE",
-text:"A father is 4 times as old as his son.<br>After 10 years, twice as old.<br>Find ages."
-},
-{
-type:"SPEED",
-text:"Two trains 300 km apart.<br>60 km/h & 90 km/h.<br>When meet?"
-},
-{
-type:"PROFIT",
-text:"Marked 50% above CP.<br>Discounts 20% & 10%.<br>Profit?"
-},
-{
-type:"MIXTURE",
-text:"40 L milk, replaced twice.<br>Milk left?"
-}
+{type:"AGE", text:"A father is 4 times as old as his son.<br>After 10 years, twice as old.<br>Find ages."},
+{type:"SPEED", text:"Two trains 300 km apart.<br>60 km/h & 90 km/h.<br>When meet?"},
+{type:"PROFIT", text:"Marked 50% above CP.<br>Discounts 20% & 10%.<br>Profit?"},
+{type:"MIXTURE", text:"40 L milk, replaced twice.<br>Milk left?"}
 ];
 
-let timer;
 let timeLeft = 60;
+let timer;
 let score = 0;
 
-/* Timer */
+/* TIMER */
 function startTimer() {
     clearInterval(timer);
     timeLeft = 60;
+
+    const timerText = document.getElementById("timerText");
 
     timer = setInterval(() => {
         timeLeft--;
         document.getElementById("time").innerText = timeLeft;
 
         let percent = (timeLeft / 60) * 100;
-        document.getElementById("progress").style.width = percent + "%";
+        let bar = document.getElementById("progress");
 
-        if (timeLeft <= 10) playBeep();
+        bar.style.width = percent + "%";
+
+        /* Color change */
+        if (timeLeft > 30) bar.style.background = "#22c55e";
+        else if (timeLeft > 10) bar.style.background = "#facc15";
+        else bar.style.background = "red";
+
+        /* Danger mode */
+        if (timeLeft <= 10) {
+            timerText.classList.add("danger");
+        } else {
+            timerText.classList.remove("danger");
+        }
 
         if (timeLeft <= 0) {
-            clearInterval(timer);
             score++;
             document.getElementById("score").innerText = score;
-            nextPuzzle();
+            loadPuzzle();
         }
     }, 1000);
-}
-
-/* Sound */
-function playBeep() {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    const osc = ctx.createOscillator();
-    osc.connect(ctx.destination);
-    osc.start();
-    setTimeout(() => osc.stop(), 80);
 }
 
 /* Puzzle */
 function loadPuzzle() {
     const p = puzzles[Math.floor(Math.random() * puzzles.length)];
-
     document.getElementById("category").innerText = p.type;
     document.getElementById("puzzle").innerHTML = p.text;
-
     startTimer();
 }
 
-function nextPuzzle() {
-    loadPuzzle();
-}
-
-/* Realistic comments */
-const names = [
-"rahul_07","neha.medico","studyking","math_guy",
-"randomuser123","ash_yt","preeti_x","ankit_99"
-];
-
+/* CHAT */
+const names = ["rahul","neha","ankit","preeti","vicky","simran","amit","rohit","kajal"];
 const messages = [
-"Got it 😎",
-"Wait what??",
-"This is tricky",
-"I think answer is 40",
-"No way bro",
-"Easy one",
-"Confusing 😭",
-"Is it 2 hours?",
-"Milk = 22.5?",
-"Almost solved",
-"Bro I got it last second",
-"Why is this so hard 😭",
-"Am I overthinking this?"
+"bhai easy hai 😎",
+"yeh kya tha 😭",
+"got it!",
+"wait samajh nahi aaya",
+"answer 40 hai kya?",
+"arey yeh tricky hai",
+"mil gaya finally 💯",
+"last second pe solve kiya",
+"kya logic hai iska",
+"overthinking kar raha tha 😵",
+"ohhh samajh aaya 🥳"
 ];
 
-function spawnComment() {
-    const container = document.getElementById("liveComments");
+function spawnMessage() {
+    const chat = document.getElementById("chat");
 
     const div = document.createElement("div");
-    div.className = "comment";
+    div.className = "msg";
 
     const name = names[Math.floor(Math.random() * names.length)];
     const msg = messages[Math.floor(Math.random() * messages.length)];
-    const likes = Math.floor(Math.random() * 50);
 
-    div.innerHTML = `<span class="username">${name}</span>${msg} <span class="likes">❤️ ${likes}</span>`;
+    div.innerHTML = `<span class="name">${name}</span>${msg}`;
 
-    container.appendChild(div);
-
+    chat.appendChild(div);
     setTimeout(() => div.remove(), 5000);
 }
 
-/* Random interval comments */
-setInterval(() => {
-    spawnComment();
-}, Math.random() * 1500 + 800);
+/* REACTIONS */
+const emojis = ["❤️","😭","💯","🥳"];
+
+function spawnReaction() {
+    const container = document.getElementById("reactions");
+
+    const div = document.createElement("div");
+    div.className = "react";
+    div.innerText = emojis[Math.floor(Math.random() * emojis.length)];
+
+    div.style.left = Math.random() * 60 + "px";
+
+    container.appendChild(div);
+    setTimeout(() => div.remove(), 3000);
+}
+
+/* Intervals */
+setInterval(spawnMessage, Math.random() * 1500 + 800);
+setInterval(spawnReaction, 800);
 
 /* Init */
 loadPuzzle();
