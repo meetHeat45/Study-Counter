@@ -19,7 +19,7 @@ body {
     align-items: center;
 }
 
-/* Subscribe Button */
+/* Subscribe */
 .subscribe {
     position: absolute;
     top: 20px;
@@ -27,43 +27,70 @@ body {
     background: #ef4444;
     padding: 8px 14px;
     border-radius: 8px;
-    font-size: 0.85rem;
     cursor: pointer;
-    transition: 0.2s;
-}
-.subscribe:hover {
-    background: #dc2626;
 }
 
-h1 {
-    font-size: 2.5rem;
-    margin-bottom: 5px;
-}
+h1 { font-size: 2.2rem; }
 
-.channel {
-    color: #94a3b8;
-    margin-bottom: 30px;
-    font-size: 1rem;
-}
+.hook { color: #f87171; margin-bottom: 10px; }
+
+.category { color: #22c55e; margin-bottom: 10px; }
 
 .puzzle {
-    font-size: 3rem;
-    font-weight: bold;
-    margin: 30px 0;
+    font-size: 2rem;
     text-align: center;
-    line-height: 1.6;
+    max-width: 500px;
 }
 
-.comment {
-    color: #facc15;
-    font-size: 1rem;
+/* Timer */
+.timer { margin-top: 10px; }
+
+.bar {
+    width: 300px;
+    height: 8px;
+    background: #1f2937;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-top: 5px;
+}
+
+.progress {
+    height: 100%;
+    width: 100%;
+    background: #22c55e;
+    transition: width 1s linear;
+}
+
+/* Buttons */
+.btn {
     margin-top: 10px;
+    padding: 8px 14px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
 }
 
-.footer {
-    margin-top: 25px;
-    color: #64748b;
-    font-size: 0.9rem;
+.reveal { background: #3b82f6; }
+.next { background: #22c55e; }
+
+/* Answer */
+.answer {
+    margin-top: 10px;
+    color: #38bdf8;
+    display: none;
+}
+
+/* Score */
+.score {
+    margin-top: 10px;
+    color: #facc15;
+}
+
+/* Fake comments */
+.comments {
+    margin-top: 20px;
+    font-size: 0.85rem;
+    color: #9ca3af;
 }
 </style>
 </head>
@@ -73,57 +100,123 @@ h1 {
 <div class="subscribe">Subscribe</div>
 
 <h1>Daily Math Puzzle</h1>
-<div class="channel">PenBox</div>
+<div class="hook">🔥 Only 1% can solve this!</div>
 
+<div class="category" id="category"></div>
 <div class="puzzle" id="puzzle"></div>
 
-<div class="comment">Comment your answer 👇</div>
-
-<div class="footer">
-    Think before you solve 🧠
+<div class="timer">
+⏳ <span id="time">60</span>s
+<div class="bar"><div class="progress" id="progress"></div></div>
 </div>
+
+<button class="btn reveal" onclick="revealAnswer()">Show Answer</button>
+<button class="btn next" onclick="nextPuzzle()">Next</button>
+
+<div class="answer" id="answer"></div>
+<div class="score">Score: <span id="score">0</span></div>
+
+<div class="comments" id="comments"></div>
 
 <script>
 const puzzles = [
-    "I am a 2-digit number.<br>The sum of my digits is 9.<br>The difference between my digits is 3.<br><br>x = ?",
-
-    "Find the missing number:<br>2, 6, 7, 21, 22, ?<br><br>x = ?",
-
-    "I am a number.<br>If you reverse me, I become 27 more than myself.<br><br>x = ?",
-
-    "Find the missing number:<br>3, 9, 27, ?, 243<br><br>x = ?",
-
-    "I am a number.<br>When divided by 2, 3, and 4, I leave remainder 1 each time.<br><br>x = ?",
-
-    "Find the missing number:<br>1, 4, 9, 16, ?, 36<br><br>x = ?",
-
-    "I am a number.<br>My square ends with 6, and I am less than 10.<br><br>x = ?",
-
-    "Find the missing number:<br>5, 11, 23, 47, ?<br><br>x = ?",
-
-    "I am a number.<br>If you add me to my reverse, you get 121.<br><br>x = ?",
-
-    "Find the missing number:<br>2, 3, 5, 9, 17, ?<br><br>x = ?"
+{
+type:"AGE",
+text:"A father is 4 times as old as his son.<br>After 10 years, twice as old.<br>Find ages.",
+answer:"40 & 10"
+},
+{
+type:"SPEED",
+text:"Two trains 300 km apart.<br>60 km/h & 90 km/h.<br>When meet?",
+answer:"2 hours"
+},
+{
+type:"PROFIT",
+text:"Marked 50% above CP.<br>Discounts 20% & 10%.<br>Profit?",
+answer:"8% profit"
+},
+{
+type:"MIXTURE",
+text:"40 L milk, replaced twice.<br>Milk left?",
+answer:"22.5 L"
+}
 ];
 
-let index = 0;
+let timer;
+let timeLeft = 60;
+let score = 0;
 
-function changePuzzle() {
-    document.getElementById("puzzle").innerHTML = puzzles[index];
+const fakeComments = [
+"Bro this is easy 😎",
+"Got it in 5 sec",
+"Wait what??",
+"This is tricky 😳",
+"Answer is 40??",
+"Only geniuses can solve 🔥"
+];
 
-    index++;
+function startTimer() {
+    clearInterval(timer);
+    timeLeft = 60;
 
-    // Loop back after last puzzle
-    if (index >= puzzles.length) {
-        index = 0;
-    }
+    timer = setInterval(() => {
+        timeLeft--;
+        document.getElementById("time").innerText = timeLeft;
+
+        let percent = (timeLeft / 60) * 100;
+        document.getElementById("progress").style.width = percent + "%";
+
+        // Tick sound last 10 sec
+        if (timeLeft <= 10) {
+            playBeep();
+        }
+
+        if (timeLeft <= 0) {
+            clearInterval(timer);
+            nextPuzzle();
+        }
+    }, 1000);
 }
 
-// Load first puzzle
-changePuzzle();
+function playBeep() {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    osc.connect(ctx.destination);
+    osc.start();
+    setTimeout(() => osc.stop(), 100);
+}
 
-// Auto change every 10 minutes
-setInterval(changePuzzle, 600000);
+function loadPuzzle() {
+    const p = puzzles[Math.floor(Math.random() * puzzles.length)];
+
+    document.getElementById("category").innerText = p.type;
+    document.getElementById("puzzle").innerHTML = p.text;
+    document.getElementById("answer").innerText = "Answer: " + p.answer;
+    document.getElementById("answer").style.display = "none";
+
+    startTimer();
+    generateComments();
+}
+
+function revealAnswer() {
+    document.getElementById("answer").style.display = "block";
+    score++;
+    document.getElementById("score").innerText = score;
+}
+
+function nextPuzzle() {
+    loadPuzzle();
+}
+
+function generateComments() {
+    let comments = "";
+    for (let i = 0; i < 3; i++) {
+        comments += fakeComments[Math.floor(Math.random() * fakeComments.length)] + "<br>";
+    }
+    document.getElementById("comments").innerHTML = comments;
+}
+
+loadPuzzle();
 </script>
 
 </body>
