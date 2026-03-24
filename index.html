@@ -5,10 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Daily Math Puzzle</title>
 
+<!-- FONT -->
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;700&display=swap" rel="stylesheet">
+
 <style>
 body {
     margin: 0;
-    font-family: 'Segoe UI', sans-serif;
+    font-family: 'Poppins', sans-serif;
     height: 100vh;
     color: white;
     overflow: hidden;
@@ -20,17 +23,31 @@ body {
     padding: 20px;
 }
 
-h1 { font-size: 2.2rem; }
+h1 {
+    font-weight: 700;
+    letter-spacing: 1px;
+    font-size: 2.2rem;
+}
 
-.channel { color: #94a3b8; margin-bottom: 10px; }
+.channel {
+    color: #94a3b8;
+    margin-bottom: 10px;
+}
 
-.hook { color: #f87171; margin-bottom: 10px; }
+.hook {
+    color: #f87171;
+    margin-bottom: 10px;
+}
 
-.category { color: #22c55e; margin-bottom: 10px; }
+.category {
+    color: #22c55e;
+    margin-bottom: 10px;
+}
 
 .puzzle {
-    font-size: 2rem;
-    line-height: 1.6;
+    font-size: 2.2rem;
+    font-weight: 600;
+    line-height: 1.7;
 }
 
 /* TIMER */
@@ -56,14 +73,12 @@ h1 { font-size: 2.2rem; }
     transition: width 1s linear;
 }
 
-/* Pulse animation */
 @keyframes pulse {
     0% { transform: scale(1); }
     50% { transform: scale(1.05); }
     100% { transform: scale(1); }
 }
 
-/* Danger shake */
 .danger {
     color: red !important;
     animation: shake 0.3s infinite;
@@ -77,7 +92,6 @@ h1 { font-size: 2.2rem; }
     100% { transform: translateX(0); }
 }
 
-/* Score */
 .score {
     margin-top: 10px;
     color: #facc15;
@@ -89,7 +103,7 @@ h1 { font-size: 2.2rem; }
     bottom: 20px;
     left: 10px;
     width: 75%;
-    font-size: 0.85rem;
+    font-size: 0.9rem;
 }
 
 .msg {
@@ -99,7 +113,7 @@ h1 { font-size: 2.2rem; }
 
 .name {
     color: #38bdf8;
-    font-weight: bold;
+    font-weight: 600;
     margin-right: 5px;
 }
 
@@ -108,17 +122,17 @@ h1 { font-size: 2.2rem; }
     100% { opacity: 0; transform: translateY(-60px); }
 }
 
-/* REACTIONS */
+/* REACTIONS RIGHT SIDE */
 .reactions {
     position: absolute;
     bottom: 20px;
-    left: 5px;
+    right: 10px;
 }
 
 .react {
     position: absolute;
-    font-size: 1.2rem;
-    animation: floatUp 3s linear forwards;
+    bottom: 0;
+    animation: floatUp 3s ease-out forwards;
 }
 
 @keyframes floatUp {
@@ -165,7 +179,6 @@ let score = 0;
 function startTimer() {
     clearInterval(timer);
     timeLeft = 60;
-
     const timerText = document.getElementById("timerText");
 
     timer = setInterval(() => {
@@ -174,20 +187,14 @@ function startTimer() {
 
         let percent = (timeLeft / 60) * 100;
         let bar = document.getElementById("progress");
-
         bar.style.width = percent + "%";
 
-        /* Color change */
         if (timeLeft > 30) bar.style.background = "#22c55e";
         else if (timeLeft > 10) bar.style.background = "#facc15";
         else bar.style.background = "red";
 
-        /* Danger mode */
-        if (timeLeft <= 10) {
-            timerText.classList.add("danger");
-        } else {
-            timerText.classList.remove("danger");
-        }
+        if (timeLeft <= 10) timerText.classList.add("danger");
+        else timerText.classList.remove("danger");
 
         if (timeLeft <= 0) {
             score++;
@@ -206,20 +213,23 @@ function loadPuzzle() {
 }
 
 /* CHAT */
-const names = ["rahul","neha","ankit","preeti","vicky","simran","amit","rohit","kajal"];
+const names = ["rahul","neha","ankit","preeti","vicky","simran","amit","rohit","kajal","deepak","shreya","ayush","manoj","ravi","pooja","nisha","karan","tanya","harsh","divya"];
+
 const messages = [
-"bhai easy hai 😎",
-"yeh kya tha 😭",
-"got it!",
-"wait samajh nahi aaya",
-"answer 40 hai kya?",
-"arey yeh tricky hai",
-"mil gaya finally 💯",
-"last second pe solve kiya",
-"kya logic hai iska",
-"overthinking kar raha tha 😵",
-"ohhh samajh aaya 🥳"
+"bhai easy hai 😎","yeh kya tha 😭","got it!","wait samajh nahi aaya",
+"answer 40 hai kya?","arey yeh tricky hai","mil gaya finally 💯",
+"last second pe solve kiya","kya logic hai iska","overthinking kar raha tha 😵",
+"ohhh samajh aaya 🥳","bhai tough hai","almost ho gaya",
+"galat ho gaya 😭","brain lag gaya 🧠","nice question 🔥",
+"bhai bata do koi","first try me ho gaya 😎","2 min laga but ho gaya",
+"bhai dimag ghoom gaya","itna simple kaise miss kiya 😭",
+"no way this is easy","I overthought this 😭",
+"bhai answer 10 hai kya?","2 hours hoga shayad",
+"22.5 aa raha hai mera","bhai jaldi next daalo",
+"addicted ho gaya 😭","samajh aaya but explain karo"
 ];
+
+let lastComments = [];
 
 function spawnMessage() {
     const chat = document.getElementById("chat");
@@ -227,17 +237,31 @@ function spawnMessage() {
     const div = document.createElement("div");
     div.className = "msg";
 
-    const name = names[Math.floor(Math.random() * names.length)];
-    const msg = messages[Math.floor(Math.random() * messages.length)];
+    let msg;
+    do {
+        msg = messages[Math.floor(Math.random() * messages.length)];
+    } while (lastComments.includes(msg));
 
+    lastComments.push(msg);
+    if (lastComments.length > 3) lastComments.shift();
+
+    const name = names[Math.floor(Math.random() * names.length)];
     div.innerHTML = `<span class="name">${name}</span>${msg}`;
 
     chat.appendChild(div);
     setTimeout(() => div.remove(), 5000);
 }
 
-/* REACTIONS */
-const emojis = ["❤️","😭","💯","🥳"];
+/* Slow realistic flow */
+function commentFlow() {
+    spawnMessage();
+    let delay = Math.random() * 2500 + 2000;
+    setTimeout(commentFlow, delay);
+}
+commentFlow();
+
+/* ❤️ REACTIONS */
+const emojis = ["❤️","😭","💯","🥳","😂","😳","🔥","😵","😎"];
 
 function spawnReaction() {
     const container = document.getElementById("reactions");
@@ -246,15 +270,24 @@ function spawnReaction() {
     div.className = "react";
     div.innerText = emojis[Math.floor(Math.random() * emojis.length)];
 
-    div.style.left = Math.random() * 60 + "px";
+    div.style.right = Math.random() * 30 + "px";
+    div.style.fontSize = (Math.random() * 10 + 14) + "px";
 
     container.appendChild(div);
     setTimeout(() => div.remove(), 3000);
 }
 
-/* Intervals */
-setInterval(spawnMessage, Math.random() * 1500 + 800);
-setInterval(spawnReaction, 800);
+function reactionFlow() {
+    let count = Math.random() < 0.3 ? Math.floor(Math.random() * 4) + 2 : 1;
+
+    for (let i = 0; i < count; i++) {
+        setTimeout(spawnReaction, i * 200);
+    }
+
+    let delay = Math.random() * 2000 + 800;
+    setTimeout(reactionFlow, delay);
+}
+reactionFlow();
 
 /* Init */
 loadPuzzle();
